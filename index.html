@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>LifeGame</title>
+    <script defer src="script.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  </head>
+  <body>
+    <h1>LifeGame</h1>
+    <div class="wrapper" style="width: 100%; height: 100%; position: relative; top: 80px;">
+      <canvas id="grid-area" width="500px" height="500px"
+      style="border: 1px solid #000000; position: absolute; margin: auto;"></canvas>
+      <canvas id="draw-area" width="500px" height="500px"
+      style="border: 1px solid #000000; position: absolute; margin: auto;"></canvas>
+    </div>
+    <div>
+      <form name="gridline-form">
+        <input type="number" id="sizenum" min="1" max="30" placeholder="マスサイズ入力(デフォ4)" style="width: 200px;">
+        <input type="button" id="sizenum-button" value="マスサイズ決定">
+      </form>
+      <button id="clear-button" style="margin-top: 15px;">AllClear</button>
+      <button id="grid-button" style="margin-top: 15px;">HideGrid</button>
+      <button id="play-button" style="margin-top: 15px;">PLAY</button>
+    </div>
+  </body>
+</html>
