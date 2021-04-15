@@ -17,13 +17,13 @@ window.addEventListener('load', () => {
     URI.searchParams.set("n", paraValue);
     window.location.href = URI.toString(); // 遷移
   }
-  
+
   // マスサイズをパラメータから取得，変更
   setSizeNum();
-  
+
   // ボタンクリックで入力値マス数に更新
   document.querySelector('#sizenum-button').addEventListener('click', setUri);
-  
+
   // メイン処理
   function main(sizeNum) {
     const canvas = document.querySelector('#draw-area');
@@ -35,37 +35,37 @@ window.addEventListener('load', () => {
     const SIZE_X = sizeNum; // 配列サイズx とりあえず同じにする
     const SIZE_Y = sizeNum; // 配列サイズy
 
-    
+
     // 配列サイズの0埋め配列を作成
     let ZERO_ARRAY = new Array(SIZE_Y);
     for (let row = 0; row < SIZE_Y; row++) {
       ZERO_ARRAY[row] = new Array(SIZE_X).fill(0);
     }
-    
+
     // 基本フィールドの作成
     let field = JSON.parse(JSON.stringify(ZERO_ARRAY));
-    
+
     const PLUS_NUM_X = canvas.offsetWidth / SIZE_X; // BOXごとの長さ
     const PLUS_NUM_Y = canvas.offsetHeight / SIZE_Y;
-    
+
     // マウスがドラッグされているか(クリックされたままか)判断するためのフラグ
     let isDrag = false;
     let isgridLineOn = false; // グリッド線があるかどうか
     let isHideButton = true; // defaultは非表示機能ボタンとする
     let isPlaying = false; // プレイ中か
     let isEnd = false; // 死滅したor固定されたか
-    
-    
+
+
 
     // 引数のIDXの周囲1マスの範囲に1がなんぼあるか
     function countNearLiving(fieldY, fieldX) { // ret count
       let count = 0;
       for (let i = -1; i < 2; i++) {
-        if ((fieldY == 0 && i == -1) || (fieldY == SIZE_Y-1 && i == 1)) {
+        if ((fieldY == 0 && i == -1) || (fieldY == SIZE_Y - 1 && i == 1)) {
           continue;
         }
         for (let j = -1; j < 2; j++) {
-          if ((fieldX == 0 && j == -1) || (fieldX == SIZE_X-1 && j == 1)) {
+          if ((fieldX == 0 && j == -1) || (fieldX == SIZE_X - 1 && j == 1)) {
             continue;
           }
           count += field[fieldY + i][fieldX + j];
@@ -78,7 +78,7 @@ window.addEventListener('load', () => {
       }
       return count - me;
     }
-    
+
     const calNextLife = async () => {
       // 次の世代を求める
       // nextgenarray
@@ -105,7 +105,7 @@ window.addEventListener('load', () => {
         document.getElementById("play-button").innerHTML = "滅亡した";
         await wait(1500);
         document.getElementById("play-button").innerHTML = "PLAY";
-      }else if (JSON.stringify(field) === JSON.stringify(fieldNext)) { // 固定された
+      } else if (JSON.stringify(field) === JSON.stringify(fieldNext)) { // 固定された
         isPlaying = false;
         isEnd = true;
         document.getElementById("play-button").innerHTML = "固定された";
@@ -115,7 +115,7 @@ window.addEventListener('load', () => {
       // 反映
       field = JSON.parse(JSON.stringify(fieldNext));
     };
-    
+
     // 直前に描いたときのマス位置を格納
     let xIdxOld = null;
     let yIdxOld = null;
@@ -156,7 +156,7 @@ window.addEventListener('load', () => {
     // カーソルで描く
     function draw(x, y) {
       // マウスがドラッグされていなかったら処理を中断する。
-      if(!isDrag) {
+      if (!isDrag) {
         return;
       }
       // カーソル位置は画面の左上が原点だけど，キャンバスで扱うのはキャンバスの左上が原点座標なので，差分を吸収する
@@ -240,10 +240,10 @@ window.addEventListener('load', () => {
     // wait関数 msec待つ asyncの関数で使える
     const wait = (msec) => {
       return new Promise((resolve) => {
-        setTimeout(() => {resolve(msec)}, msec);
+        setTimeout(() => { resolve(msec) }, msec);
       });
     };
-    
+
     const play = async () => {
       if (isPlaying) { // PLAY中にボタン押されたらPLAY終了(中断処理)
         isPlaying = false;
@@ -268,17 +268,17 @@ window.addEventListener('load', () => {
     };
 
     drawGridLine(); // gridLineは描いとく
-        
+
     // マウス操作やボタンクリック時のイベント処理を定義する
     function initEventHandler() {
-      
+
 
       const playButon = document.querySelector('#play-button');
       playButon.addEventListener('click', play);
-      
+
       const clearButton = document.querySelector('#clear-button');
       clearButton.addEventListener('click', clear);
-      
+
       const modifyGridLineButton = document.querySelector('#grid-button');
       modifyGridLineButton.addEventListener('click', modifyGridLine);
 
