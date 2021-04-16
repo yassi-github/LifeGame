@@ -340,8 +340,7 @@ window.addEventListener('load', () => {
       while (!isEnd) {
         // もしもの中断処理
         if (!isPlaying) return;
-        await wait(100);
-
+        
         // field配列を次の世代に更新
         calNextLife();
         // 描画
@@ -350,16 +349,19 @@ window.addEventListener('load', () => {
         // field配列から図形を描画
         fillAllBoxFromArray();
         // ちょっと待つ
+        await wait(1000);
       }
 
       // 初期化
-      // document.getElementById("play-button").innerHTML = "PLAY";
       isEnd = false;
     };
+    
 
-    context.fillStyle = 'rgb(255,50,23)';
+    // 色変更
+    context.fillStyle = 'rgb(0,0,0)';
 
-    drawGridLine(); // gridLineは描いとく
+    // gridLineは描いとく
+    drawGridLine();
 
 
     // マウス操作やボタンクリック時のイベント処理を定義する
