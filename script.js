@@ -1,96 +1,130 @@
 // ページの読み込みが完了した
 window.addEventListener('load', () => {
-  // マスサイズをセット
-  function setSizeNum() {
-    let param = Number(new URL(location).searchParams.get("n"));
-    let sizeNum = 4;  // 初期値
-    if (3 <= param && param <= 30) {
-      sizeNum = param;
+  // パネル数をセット
+  function setPanelNum() {
+    // 現在のパラメータからパネル数を取得
+    let panelNumFromParam = Number(new URL(location).searchParams.get("n"));
+
+    // 初期値
+    let panelNum = 4;
+
+    // 取得したパネル数指定が範囲内なら更新
+    if (3 <= panelNumFromParam && panelNumFromParam <= 30) {
+      panelNum = panelNumFromParam;
     }
-    main(sizeNum);
+
+    // パネル数を指定し、メイン処理開始
+    main(panelNum);
   }
+
 
   // URIに入力値をつけて遷移
   function setUri() {
-    let paraValue = Number(document.getElementById('sizenum').value);
+    // パネル数指定の入力値をHTMLから取得
+    let paraValue = Number(document.getElementById('panelnum').value);
+
+    // ページ遷移
     const URI = new URL(location)
     URI.searchParams.set("n", paraValue);
-    window.location.href = URI.toString(); // 遷移
+    window.location.href = URI.toString();
   }
 
-  // マスサイズをパラメータから取得，変更
-  setSizeNum();
 
-  // ボタンクリックで入力値マス数に更新
-  document.querySelector('#sizenum-button').addEventListener('click', setUri);
+  // パネル数をパラメータから取得，変更
+  setPanelNum();
+
+  // ボタンクリックで入力値パネル数に更新
+  document.querySelector('#panelnum-button').addEventListener('click', setUri);
+
 
   // メイン処理
-  function main(sizeNum) {
+  function main(panelNum) {
+    // canvasの取得
     const canvas = document.querySelector('#draw-area');
     const gridCanvas = document.querySelector('#grid-area');
     // contextを使ってcanvasに絵を書いていく
     const context = canvas.getContext('2d');
     const contextGridLine = gridCanvas.getContext('2d');
 
-    const SIZE_X = sizeNum; // 配列サイズx とりあえず同じにする
-    const SIZE_Y = sizeNum; // 配列サイズy
+    // パネル数 横
+    const PANEL_NUM_X = panelNum;
+    // パネル数 縦
+    const PANEL_NUM_Y = panelNum;
 
 
-    // 配列サイズの0埋め配列を作成
-    let ZERO_ARRAY = new Array(SIZE_Y);
-    for (let row = 0; row < SIZE_Y; row++) {
-      ZERO_ARRAY[row] = new Array(SIZE_X).fill(0);
+    // パネル数ぶんの0埋め2次元配列を作成
+    let ZERO_ARRAY = new Array(PANEL_NUM_Y);
+    for (let row = 0; row < PANEL_NUM_Y; row++) {
+      ZERO_ARRAY[row] = new Array(PANEL_NUM_X).fill(0);
     }
 
     // 基本フィールドの作成
     let field = JSON.parse(JSON.stringify(ZERO_ARRAY));
 
-    const PLUS_NUM_X = canvas.offsetWidth / SIZE_X; // BOXごとの長さ
-    const PLUS_NUM_Y = canvas.offsetHeight / SIZE_Y;
+    // パネルごとの長さ
+    const PLUS_NUM_X = canvas.offsetWidth / PANEL_NUM_X;
+    const PLUS_NUM_Y = canvas.offsetHeight / PANEL_NUM_Y;
 
     // マウスがドラッグされているか(クリックされたままか)判断するためのフラグ
     let isDrag = false;
-    let isgridLineOn = false; // グリッド線があるかどうか
-    let isHideButton = true; // defaultは非表示機能ボタンとする
-    let isPlaying = false; // プレイ中か
-    let isEnd = false; // 死滅したor固定されたか
+    // グリッド線があるかどうか
+    let isgridLineOn = false;
+    // 非表示機能ボタンとして機能するか(falseだと表示させる機能を持つようになる)
+    let isHideButton = true;
+    // プレイ中か
+    let isPlaying = false;
+    // 死滅したor固定されたか
+    let isEnd = false;
 
 
 
-    // 引数のIDXの周囲1マスの範囲に1がなんぼあるか
-    function countNearLiving(fieldY, fieldX) { // ret count
+    // 引数の場所にあるパネルの周囲1パネルの範囲に1(生存パネル)がなんぼあるか
+    function countNearLiving(fieldY, fieldX) {
+      // カウント用変数
       let count = 0;
       for (let i = -1; i < 2; i++) {
-        if ((fieldY == 0 && i == -1) || (fieldY == SIZE_Y - 1 && i == 1)) {
+        // フィールドの範囲外は処理を飛ばす
+        if ((fieldY == 0 && i == -1) || (fieldY == PANEL_NUM_Y - 1 && i == 1)) {
           continue;
         }
         for (let j = -1; j < 2; j++) {
-          if ((fieldX == 0 && j == -1) || (fieldX == SIZE_X - 1 && j == 1)) {
+          // フィールドの範囲外は処理を飛ばす
+          if ((fieldX == 0 && j == -1) || (fieldX == PANEL_NUM_X - 1 && j == 1)) {
             continue;
           }
+          // 9パネルすべてをカウント
           count += field[fieldY + i][fieldX + j];
         }
       }
+
+      // 自身のフィールド値のため
       let me = 0;
-      if (field[fieldY][fieldX] != 0) { // 自マスが生存しているならそのぶんはカウントしない(countから自分を引く)
-        // me = field[fieldY][fieldX];
+      // 自パネルが生存しているならそのぶんはカウントしない(countから自分を引く)
+      if (field[fieldY][fieldX] != 0) {
         me = field[fieldY][fieldX];
       }
+
       return count - me;
     }
 
+
+    // 次の世代を求める
     const calNextLife = async () => {
-      // 次の世代を求める
-      // nextgenarray
+      // 次世代のフィールドのため
       let fieldNext = JSON.parse(JSON.stringify(field));
 
+      // 現在のフィールドの全パネルについて
       for (let i = 0; i < field.length; i++) {
         for (let j = 0; j < field[0].length; j++) {
-          // 周囲1マスの生存数
+          // 周囲1パネルの生存数
           let nearLivingNum = countNearLiving(i, j);
-          if (field[i][j] == 0 && nearLivingNum == 3) { // 生誕
+
+          // 生存数に応じて次世代がどうなるか変わる
+          if (field[i][j] == 0 && nearLivingNum == 3) {
+            // 生誕
             fieldNext[i][j] = 1;
-          } else if (field[i][j] == 1 && (nearLivingNum <= 1 || nearLivingNum >= 4)) { // 過疎 or 過密 (死)
+          } else if (field[i][j] == 1 && (nearLivingNum <= 1 || nearLivingNum >= 4)) {
+            // 過疎 or 過密 (死)
             fieldNext[i][j] = 0;
           } else {
             // 生存（そのまま）
@@ -98,55 +132,83 @@ window.addEventListener('load', () => {
         }
       }
 
-      if (JSON.stringify(field) === JSON.stringify(ZERO_ARRAY)) { // 全員死滅
+      // 現在のフィールド状態から継続か否かが決定する
+      if (JSON.stringify(field) === JSON.stringify(ZERO_ARRAY)) {
+        // 全員死滅時
         isPlaying = false;
         isEnd = true;
+        // 内部フィールド配列とcanvasをゼロクリア
         clear();
+        // ボタンに結果を表示
         document.getElementById("play-button").innerHTML = "滅亡した";
-        await wait(1500);
-        document.getElementById("play-button").innerHTML = "PLAY";
-      } else if (JSON.stringify(field) === JSON.stringify(fieldNext)) { // 固定された
+        // すぐにPLAYに変わるといけないので、1.5秒(1500 ms)待つ
+        setTimeout(() => {
+          document.getElementById("play-button").innerHTML = "PLAY";
+        }, 1500);
+
+      } else if (JSON.stringify(field) === JSON.stringify(fieldNext)) {
+        // 固定された時
         isPlaying = false;
         isEnd = true;
+        // ボタンに結果を表示
         document.getElementById("play-button").innerHTML = "固定された";
-        await wait(1500);
-        document.getElementById("play-button").innerHTML = "PLAY";
+        setTimeout(() => {
+          document.getElementById("play-button").innerHTML = "PLAY";
+        }, 1500);
+
+      } else {
+        // それ以外はなにもせず処理を続行する
       }
-      // 反映
+
+      // フィールド配列に次世代のフィールド状態を反映
       field = JSON.parse(JSON.stringify(fieldNext));
     };
 
-    // 直前に描いたときのマス位置を格納
+
+    // canvas描画処理
+
+    // 直前に描いたときのパネル位置を格納
     let xIdxOld = null;
     let yIdxOld = null;
 
-    function drawFillBox(x, y) {
-      // カーソル位置を受け取り，そこが属するマスを塗りつぶす
-      // 配列の書き換えも行う
 
-      // カーソル位置がどこのマスに属するか
-      let xIdx = x / PLUS_NUM_X | 0; // 小数切り捨てのための OR 演算
+    // カーソル位置を受け取り，そこが属するパネルを塗りつぶす
+    // フィールド配列の書き換えも行う
+    function drawFillBox(x, y) {
+
+      // カーソル位置がどこのパネルに属するか
+      // OR 演算は、小数切り捨てのため
+      let xIdx = x / PLUS_NUM_X | 0;
       let yIdx = y / PLUS_NUM_Y | 0;
-      if (xIdx != xIdxOld || yIdx != yIdxOld) { // 直前に描いたマスとカーソル位置が一致しないなら描く
-        // 属するマス位置の配列を1に書き換え
-        if (field[yIdx][xIdx] == 0) { // 属するマスが0なら1を描く
+
+      // 直前に描いたパネルとカーソル位置が一致しないなら描く
+      if (xIdx != xIdxOld || yIdx != yIdxOld) {
+        // 属するパネルが0なら1とする
+        if (field[yIdx][xIdx] == 0) {
+          // フィールド配列を書き換え
           field[yIdx][xIdx] = 1;
-          context.fillRect(xIdx * PLUS_NUM_X, yIdx * PLUS_NUM_Y, PLUS_NUM_X, PLUS_NUM_Y); // 四角形描画
-        } else { // 属するマスが0でないなら0を描く（消す）
+          // 四角形描画
+          context.fillRect(xIdx * PLUS_NUM_X, yIdx * PLUS_NUM_Y, PLUS_NUM_X, PLUS_NUM_Y);
+        } else {
+          // 属するパネルが0でないなら0を描く（消す）
           field[yIdx][xIdx] = 0;
-          context.clearRect(xIdx * PLUS_NUM_X, yIdx * PLUS_NUM_Y, PLUS_NUM_X, PLUS_NUM_Y); // 四角形のサイズで消す
+          // 四角形のサイズで消す
+          context.clearRect(xIdx * PLUS_NUM_X, yIdx * PLUS_NUM_Y, PLUS_NUM_X, PLUS_NUM_Y);
         }
-        // 描いたら更新
+
+        // 描いたら位置情報を更新
         xIdxOld = xIdx;
         yIdxOld = yIdx;
       }
     }
 
+    // fieldから四角を作成描画
     function fillAllBoxFromArray() {
-      // fieldから四角を作成描画
-      for (let i = 0; i < SIZE_Y; i++) {
-        for (let j = 0; j < SIZE_X; j++) {
-          if (field[i][j] != 0) { // 0でなかったら描画
+      // 全てのフィールド要素について
+      for (let i = 0; i < PANEL_NUM_Y; i++) {
+        for (let j = 0; j < PANEL_NUM_X; j++) {
+          // 0でなかったら描画
+          if (field[i][j] != 0) {
             context.fillRect(j * PLUS_NUM_X, i * PLUS_NUM_Y, PLUS_NUM_X, PLUS_NUM_Y);
           }
         }
@@ -162,13 +224,14 @@ window.addEventListener('load', () => {
       // カーソル位置は画面の左上が原点だけど，キャンバスで扱うのはキャンバスの左上が原点座標なので，差分を吸収する
       y = y - canvas.offsetTop;
       x = x - canvas.offsetLeft;
-      // カーソル位置に属するマスを描く
+      // カーソル位置に属するパネルを描く
       drawFillBox(x, y);
     }
 
     // canvas上に書いた絵を全部消し，配列もゼロ埋めする
     function clear() {
-      if (isPlaying) { // PLAY中にボタン押されたらPLAY終了(中断処理)
+      // PLAY中にボタン押されたらPLAY終了(中断処理)
+      if (isPlaying) {
         isPlaying = false;
         isEnd = false;
         document.getElementById("play-button").innerHTML = "PLAY";
@@ -187,7 +250,8 @@ window.addEventListener('load', () => {
 
     // グリッド線の描画
     function drawGridLine() {
-      if (!isgridLineOn) { // グリッド線書かれてないなら
+      // グリッド線書かれてないなら
+      if (!isgridLineOn) {
         // 縦線
         for (let i = 0; i < canvas.offsetWidth / PLUS_NUM_X | 0; i++) {
           contextGridLine.beginPath();
@@ -204,38 +268,52 @@ window.addEventListener('load', () => {
           contextGridLine.closePath();
           contextGridLine.stroke();
         }
-        isgridLineOn = true; // 書けました
+        // 書けました
+        isgridLineOn = true;
       }
     }
+
 
     // グリッド線を消す
     function clearGridLine() {
       contextGridLine.clearRect(0, 0, canvas.width, canvas.height);
-      isgridLineOn = false; // グリッド線なしに
+      // グリッド線なしに
+      isgridLineOn = false;
     }
+
 
     // グリッド線を描画するか消すか，ボタン1つで機能するように
     function modifyGridLine() {
-      if (isHideButton) { // removebuttonとされるとき
-        clearGridLine(); // removebuttonとして機能
-        isHideButton = false; // removebuttonではなくなる
+      // hideButtonとされるとき
+      if (isHideButton) {
+        // hideButtonとして機能
+        clearGridLine();
+        // 次回はhideButtonではなくなる
+        isHideButton = false;
         document.getElementById("grid-button").innerHTML = "ShowGrid";
         return;
+      } else {
+        // hideButtonでないとき
+        // hideButtonでないもの(drawbutton)として機能
+        drawGridLine();
+        document.getElementById("grid-button").innerHTML = "HideGrid";
+        // 次回はhideButtonとなる
+        isHideButton = true;
       }
-      // removebuttonでないとき
-      drawGridLine(); // removebuttonでないもの(drawbutton)として機能
-      document.getElementById("grid-button").innerHTML = "HideGrid";
-      isHideButton = true; // removebuttonとなる
     }
 
-    // マウスのドラッグを開始したらisDragのフラグをtrueにしてdraw関数内で描画処理が途中で止まらないようにする
+
+    // マウスのドラッグを開始したらisDragをtrueにしてdraw関数内で描画処理が途中で止まらないようにする
     function dragStart(event) {
       isDrag = true;
     }
+
+
     // マウスのドラッグが終了したら、もしくはマウスがcanvas外に移動したらisDragのフラグをfalseにしてdraw関数内でお絵かき処理が中断されるようにする
     function dragEnd(event) {
       isDrag = false;
     }
+
 
     // wait関数 msec待つ asyncの関数で使える
     const wait = (msec) => {
@@ -244,34 +322,48 @@ window.addEventListener('load', () => {
       });
     };
 
+
+    // play時の処理
     const play = async () => {
-      if (isPlaying) { // PLAY中にボタン押されたらPLAY終了(中断処理)
+      // PLAY中にボタン押されたらPLAY終了(中断処理)
+      if (isPlaying) {
         isPlaying = false;
         isEnd = false;
         document.getElementById("play-button").innerHTML = "PLAY";
         return;
       }
-      // gameplay
+      // gameplay flag
       isPlaying = true;
       document.getElementById("play-button").innerHTML = "PLAYING...";
+
+      // 終わらない限り
       while (!isEnd) {
-        if (!isPlaying) return; // 中断処理
+        // もしもの中断処理
+        if (!isPlaying) return;
+        await wait(100);
+
         // field配列を次の世代に更新
         calNextLife();
         // 描画
-        remove(); // 現在の描画図形を削除
-        fillAllBoxFromArray(); // field配列から図形を描画
-        await wait(1000); // ちょっと待つ
+        // 現在の描画図形を削除
+        remove();
+        // field配列から図形を描画
+        fillAllBoxFromArray();
+        // ちょっと待つ
       }
-      document.getElementById("play-button").innerHTML = "PLAY";
+
+      // 初期化
+      // document.getElementById("play-button").innerHTML = "PLAY";
       isEnd = false;
     };
 
+    context.fillStyle = 'rgb(255,50,23)';
+
     drawGridLine(); // gridLineは描いとく
+
 
     // マウス操作やボタンクリック時のイベント処理を定義する
     function initEventHandler() {
-
 
       const playButon = document.querySelector('#play-button');
       playButon.addEventListener('click', play);
